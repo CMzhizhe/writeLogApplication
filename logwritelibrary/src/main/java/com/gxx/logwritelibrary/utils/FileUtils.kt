@@ -9,7 +9,7 @@ import java.io.OutputStreamWriter
 class FileUtils {
 
    suspend fun writeLineToFile(context: Context,list: MutableList<TagLogModel>):String{
-       val path = context.cacheDir.path + File.separator + "log_write.txt"
+       val path = context.cacheDir.path + File.separator + "log_write_" + System.currentTimeMillis() + ".txt"
        val file = File(path)
 
        if (file.exists()){
