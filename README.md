@@ -3,6 +3,7 @@
 
 #### 使用教程
 ```
+  implementation 'com.github.CMzhizhe:writeLogApplication:v1.0.0'
   LogWriteManager.Builder()
             .setApplication(this)
             .setDebug(BuildConfig.DEBUG)
