@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 class DBWriteUtils(context: Context, dbName: String) {
     private val writableDatabase: SQLiteDatabase
     private var readDatabase: SQLiteDatabase
+
     init {
         val dbHelper = DBHelper(context, dbName, null, 1)
         writableDatabase = dbHelper.writableDatabase

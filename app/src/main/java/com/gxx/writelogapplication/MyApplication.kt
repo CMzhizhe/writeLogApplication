@@ -2,24 +2,26 @@ package com.gxx.writelogapplication
 
 import android.app.Application
 import android.util.Log
-import com.gxx.logwritelibrary.LogWriteManager
-import com.gxx.logwritelibrary.inter.OnLogWriteTimeFinishListener
+import com.gxx.logwritelibrary.LogWrite
+import com.gxx.logwritelibrary.inter.OnLogWriteFinishListener
 import com.gxx.logwritelibrary.model.TagLogModel
 
-class MyApplication: Application(), OnLogWriteTimeFinishListener {
+class MyApplication: Application(), OnLogWriteFinishListener {
     val TAG = "MyApplication";
     override fun onCreate() {
         super.onCreate()
-        LogWriteManager.Builder()
+        LogWrite.Builder()
             .setApplication(this)
             .setDebug(BuildConfig.DEBUG)
-            .setOnLogWriteTimeFinishListener(this)
-            .setDuration(30)
+            .setOnLogWriteFinishListener(this)
             .build()
 
     }
 
-    override fun onLogWriteTimeFinish(txtPath: String, list: MutableList<TagLogModel>) {
+    override fun onLogWriteFinish(txtPath: String, list: MutableList<TagLogModel>) {
          Log.e(TAG,"本地文件地址---->$txtPath")
+        for (tagLogModel in list) {
+            Log.e(TAG,tagLogModel.message + "，time=${tagLogModel.time}")
+        }
     }
 }

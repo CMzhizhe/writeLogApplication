@@ -6,4 +6,5 @@ class TagLogModel(
      val createTime:Long,
      val time:String
     ) {
+
 }

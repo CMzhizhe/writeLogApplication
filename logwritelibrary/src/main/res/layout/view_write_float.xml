@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.gxx.logwritelibrary.widget.CustomButton xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tv_record"
+    android:textColor="#ffffff"
+    android:gravity="center"
+    android:text="WriteIng"
+    android:elevation="3dp"
+    android:textSize="14sp"
+    android:background="@drawable/shape_rectangle_solid_7792e4_corner50"
+    android:layout_width="65dp"
+    android:layout_height="65dp">
+
+</com.gxx.logwritelibrary.widget.CustomButton>
