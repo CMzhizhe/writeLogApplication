@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Looper
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.gxx.logwritelibrary.inter.OnLogWriteFinishListener
@@ -86,8 +87,13 @@ object LogWrite  {
 
         //service是否启动了
         if (isStartService){
+            //判断是否为主线程
             val logTime = System.currentTimeMillis()
-            ViewModelMain.tagLogModelLiveData.value = TagLogModel(tag,message,logTime, simpleDataFormat.format(logTime))
+            if (Looper.myLooper() == Looper.getMainLooper()){
+                ViewModelMain.tagLogModelLiveData.value = TagLogModel(tag,message,logTime, simpleDataFormat.format(logTime))
+            }else{
+                ViewModelMain.tagLogModelLiveData.postValue(TagLogModel(tag,message,logTime, simpleDataFormat.format(logTime)))
+            }
         }
     }
 
