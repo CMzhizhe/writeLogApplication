@@ -18,6 +18,7 @@ import com.gxx.logwritelibrary.R
 import com.gxx.logwritelibrary.db.DBWriteUtils
 import com.gxx.logwritelibrary.model.TagLogModel
 import com.gxx.logwritelibrary.utils.FileUtils
+import com.gxx.logwritelibrary.utils.ProcessUtils
 import com.gxx.logwritelibrary.utils.Utils
 import com.gxx.logwritelibrary.utils.ViewTouchListener
 import com.gxx.logwritelibrary.utils.pool.inter.ITask
@@ -82,9 +83,19 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
 
     override fun onCreate() {
         super.onCreate()
+        //获取进程名称
+       val processName = ProcessUtils.getProcessName(this)
+        // 进行拆分
+        val array = processName.split(":")
+
         if (this.dbName.isNullOrEmpty()) {
             dbName = "gxx_log_write.db"
         }
+
+        if (array.size == 2){
+            dbName = array[1] +"_"+dbName
+        }
+
         dbWriteUtils = DBWriteUtils(application, dbName)
         createView()
         ViewModelMain.tagLogModelLiveData.observe(this) {

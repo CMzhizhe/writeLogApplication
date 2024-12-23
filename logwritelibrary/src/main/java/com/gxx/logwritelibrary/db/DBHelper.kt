@@ -10,7 +10,6 @@ class DBHelper(context: Context, name: String, factory: SQLiteDatabase.CursorFac
         const val COLUMN_MESSAGE = "message"
         const val COLUMN_TIME = "time"
         const val COLUMN_CREATE_TIME = "createTime"
-
         const val TABLE_NAME = "write_log_table"
     }
 
