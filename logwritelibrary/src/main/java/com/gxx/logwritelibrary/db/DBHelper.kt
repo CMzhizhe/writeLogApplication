@@ -9,6 +9,7 @@ class DBHelper(context: Context, name: String, factory: SQLiteDatabase.CursorFac
         const val COLUMN_TAG = "tag"
         const val COLUMN_MESSAGE = "message"
         const val COLUMN_TIME = "time"
+        const val COLUMN_JSON = "json"
         const val COLUMN_CREATE_TIME = "createTime"
         const val TABLE_NAME = "write_log_table"
     }
@@ -20,6 +21,7 @@ class DBHelper(context: Context, name: String, factory: SQLiteDatabase.CursorFac
                 "${COLUMN_TAG} VARCHAR(50)," +
                 "${COLUMN_MESSAGE} TEXT," +
                 "${COLUMN_TIME} TEXT," +
+                "${COLUMN_JSON} TEXT," +
                 "${COLUMN_CREATE_TIME} INTEGER" +
                 ");"
         db?.execSQL(table)

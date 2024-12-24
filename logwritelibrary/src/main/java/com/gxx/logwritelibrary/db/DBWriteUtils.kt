@@ -23,13 +23,16 @@ class DBWriteUtils(context: Context, dbName: String) {
                     "${DBHelper.COLUMN_TAG}," +
                     "${DBHelper.COLUMN_MESSAGE}," +
                     "${DBHelper.COLUMN_TIME}," +
+                    "${DBHelper.COLUMN_JSON}," +
                     "${DBHelper.COLUMN_CREATE_TIME}" +
-                    ") values(?,?,?,?)",
+                    ") values(?,?,?,?,?)",
             arrayOf(
                 model.tag,
                 model.message,
                 model.time,
-                model.createTime)
+                model.json,
+                model.createTime
+            )
         )
     }
 
@@ -40,6 +43,7 @@ class DBWriteUtils(context: Context, dbName: String) {
             DBHelper.COLUMN_TAG,
             DBHelper.COLUMN_MESSAGE,
             DBHelper.COLUMN_TIME,
+            DBHelper.COLUMN_JSON,
             DBHelper.COLUMN_CREATE_TIME
         ),null,null,null,null,"${DBHelper.COLUMN_CREATE_TIME} ASC")
         while (cursor.moveToNext()){
@@ -47,6 +51,7 @@ class DBWriteUtils(context: Context, dbName: String) {
                 tag = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COLUMN_TAG)),
                 message = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COLUMN_MESSAGE)),
                 time = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COLUMN_TIME)),
+                json = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.COLUMN_JSON)),
                 createTime = cursor.getLong(cursor.getColumnIndexOrThrow(DBHelper.COLUMN_CREATE_TIME))
             )
             list.add(model)

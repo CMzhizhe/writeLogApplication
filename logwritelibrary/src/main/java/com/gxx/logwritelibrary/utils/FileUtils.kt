@@ -1,7 +1,6 @@
 package com.gxx.logwritelibrary.utils
 
 import android.content.Context
-import android.os.Environment
 import com.gxx.logwritelibrary.model.TagLogModel
 import java.io.File
 import java.io.FileOutputStream

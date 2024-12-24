@@ -79,8 +79,12 @@ object LogWrite  {
         LocalBroadcastManager.getInstance(application).registerReceiver(receiver,filter)
     }
 
+    fun log(tag: String,message: String){
+        this.log(tag,message,"",true)
+    }
 
-    fun log(tag:String, message:String, showLog:Boolean = true){
+    fun log(tag:String, message:String,jsonString:String = "", showLog:Boolean = true){
+
         if (isDebug && showLog){
             Log.d(tag,message)
         }
@@ -90,9 +94,9 @@ object LogWrite  {
             //判断是否为主线程
             val logTime = System.currentTimeMillis()
             if (Looper.myLooper() == Looper.getMainLooper()){
-                ViewModelMain.tagLogModelLiveData.value = TagLogModel(tag,message,logTime, simpleDataFormat.format(logTime))
+                ViewModelMain.tagLogModelLiveData.value = TagLogModel(tag,message,jsonString,logTime, simpleDataFormat.format(logTime))
             }else{
-                ViewModelMain.tagLogModelLiveData.postValue(TagLogModel(tag,message,logTime, simpleDataFormat.format(logTime)))
+                ViewModelMain.tagLogModelLiveData.postValue(TagLogModel(tag,message,jsonString,logTime, simpleDataFormat.format(logTime)))
             }
         }
     }

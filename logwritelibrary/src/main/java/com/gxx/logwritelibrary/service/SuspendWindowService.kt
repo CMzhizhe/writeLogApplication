@@ -99,7 +99,7 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
         dbWriteUtils = DBWriteUtils(application, dbName)
         createView()
         ViewModelMain.tagLogModelLiveData.observe(this) {
-            log(it.tag, it.message)
+            log(it.tag, it.message,it.json)
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(SuspendWindowService.FILTER_SERVICE))
     }
@@ -198,7 +198,7 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
         }
     }
 
-    private fun log(tag: String, message: String) {
+    private fun log(tag: String, message: String,json:String) {
         if (dbWriteUtils == null) {
             if (LogWrite.isDebug()){
                 Log.d(TAG, "dbWriteUtils 未初始化");
@@ -209,7 +209,12 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
         taskQueue.add(object : ITask {
             override fun doTask() {
                 val logTime = System.currentTimeMillis()
-                dbWriteUtils?.insert(TagLogModel(tag, message, logTime, simpleDataFormat.format(logTime)))
+                dbWriteUtils?.insert(TagLogModel(
+                    tag = tag,
+                    message = message,
+                    json = json,
+                    createTime = logTime,
+                    time =  simpleDataFormat.format(logTime)))
             }
 
             override fun compareTo(other: ITask): Int {
