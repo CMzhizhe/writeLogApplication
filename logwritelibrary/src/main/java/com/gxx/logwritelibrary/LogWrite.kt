@@ -3,17 +3,20 @@ package com.gxx.logwritelibrary
 
 import android.app.Application
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.ServiceConnection
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.gxx.logwritelibrary.inter.OnLogWriteFinishListener
 import com.gxx.logwritelibrary.model.TagLogModel
 import com.gxx.logwritelibrary.service.SuspendWindowService
-import com.gxx.logwritelibrary.service.ViewModelMain
 import com.gxx.logwritelibrary.utils.Utils
+import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -23,10 +26,9 @@ object LogWrite  {
     private var isDebug = false;
     private var dbName = ""
     private var isStartService = false
-    private val simpleDataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
     private lateinit var application:Application
     private var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
-    private var isStart = false;
+    private var weakFlowService:WeakReference<SuspendWindowService>? = null
 
     class Builder{
         var isDebug = false;
@@ -75,8 +77,6 @@ object LogWrite  {
         this.isDebug = builder.isDebug;
         this.dbName = builder.dbName
         this.onLogWriteFinishListener = builder.onLogWriteFinishListener
-        val filter = IntentFilter(SuspendWindowService.FILTER_SERVICE)
-        LocalBroadcastManager.getInstance(application).registerReceiver(receiver,filter)
     }
 
     fun log(tag: String,message: String){
@@ -84,20 +84,12 @@ object LogWrite  {
     }
 
     fun log(tag:String, message:String,jsonString:String = "", showLog:Boolean = true){
-
         if (isDebug && showLog){
             Log.d(tag,message)
         }
 
-        //service是否启动了
-        if (isStartService){
-            //判断是否为主线程
-            val logTime = System.currentTimeMillis()
-            if (Looper.myLooper() == Looper.getMainLooper()){
-                ViewModelMain.tagLogModelLiveData.value = TagLogModel(tag,message,jsonString,logTime, simpleDataFormat.format(logTime))
-            }else{
-                ViewModelMain.tagLogModelLiveData.postValue(TagLogModel(tag,message,jsonString,logTime, simpleDataFormat.format(logTime)))
-            }
+        if (isStartService && weakFlowService!=null && weakFlowService?.get()!=null){
+            weakFlowService?.get()?.log(tag = tag,msg = message, json = jsonString)
         }
     }
 
@@ -109,7 +101,8 @@ object LogWrite  {
     fun showView(){
         // 判断是否含有浮窗权限
         Utils.checkSuspendedWindowPermission(application){
-            SuspendWindowService.startService(application, isDebug = isDebug, dbName = dbName)
+            SuspendWindowService.startAndBindService(application, isDebug = isDebug, dbName = dbName,
+                serviceConnection)
         }
 
     }
@@ -123,17 +116,26 @@ object LogWrite  {
         // 判断是否含有浮窗权限
         Utils.checkSuspendedWindowPermission(application){
             application.stopService(Intent(application,SuspendWindowService::class.java))
+            application.unbindService(serviceConnection)
         }
     }
 
-    private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            isStartService = true
-            if (isDebug()){
-                Log.d(TAG,"SuspendWindowService 创建完成")
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            if (service!=null){
+                val binder = service as SuspendWindowService.LocalBinder
+                weakFlowService = WeakReference<SuspendWindowService>(binder.getService())
+                isStartService = true
             }
-        }
-    }
 
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            isStartService = false
+            weakFlowService?.clear()
+        }
+
+    }
 
 }

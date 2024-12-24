@@ -1,10 +1,18 @@
 package com.gxx.logwritelibrary.service
 
 import android.annotation.SuppressLint
+import android.app.Application
+import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.PixelFormat
+import android.os.Binder
 import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.os.Message
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Gravity
@@ -41,9 +49,9 @@ import java.util.concurrent.PriorityBlockingQueue
  * @Creat 4/15/21 5:28 PM
  * @Compony 永远相信美好的事情即将发生
  */
-class SuspendWindowService : LifecycleService(),View.OnClickListener {
+class SuspendWindowService : Service(),View.OnClickListener {
     companion object {
-        const val FILTER_SERVICE = "com.gxx.logwritelibrary.service.SuspendWindowService"
+        const val MSG_WHAT_1 = 1
 
         const val STATUS_NO = -1//原始状态
         const val STATUS_1 = 1;//正在记录中
@@ -54,14 +62,17 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
         const val IS_DEBUG = "isDebug"
         const val DB_NAME = "dbName"
 
-        fun startService(context: Context, isDebug: Boolean = false, dbName: String = "") {
+        fun startAndBindService(context: Application, isDebug: Boolean = false, dbName: String = "", serviceConnection: ServiceConnection) {
             val intent = Intent(context, SuspendWindowService::class.java)
             intent.putExtra(IS_DEBUG, isDebug)
             intent.putExtra(DB_NAME, dbName)
             context.startService(intent)
+            context.bindService(intent,serviceConnection,Context.BIND_AUTO_CREATE)
         }
     }
 
+    private val binder: IBinder = LocalBinder(this)
+    private var handler:MyHandler? = null
     private val disCoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var status = STATUS_NO
     private val TAG = "${LogWrite.TAG}.SuspendWinService"
@@ -74,6 +85,25 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
     private val singleThread = Executors.newSingleThreadExecutor()
     private var dbName: String = "";//数据库名称
     private var isDebug = false;
+
+    class LocalBinder(private val service: SuspendWindowService) : Binder() {
+        fun getService():SuspendWindowService{
+            return service
+        }
+    }
+
+    class MyHandler(private val service:SuspendWindowService) : Handler(service.mainLooper){
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+            if (msg.what == MSG_WHAT_1){
+                service.addITask(msg.obj as TagLogModel)
+            }
+        }
+    }
+
+    override fun onBind(intent: Intent): IBinder {
+        return binder
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         this.isDebug = intent?.getBooleanExtra(IS_DEBUG, false) ?: false
@@ -98,10 +128,8 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
 
         dbWriteUtils = DBWriteUtils(application, dbName)
         createView()
-        ViewModelMain.tagLogModelLiveData.observe(this) {
-            log(it.tag, it.message,it.json)
-        }
-        LocalBroadcastManager.getInstance(this).sendBroadcast(Intent(SuspendWindowService.FILTER_SERVICE))
+
+        handler = MyHandler(this)
     }
 
     /**
@@ -198,7 +226,9 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
         }
     }
 
-    private fun log(tag: String, message: String,json:String) {
+
+
+    fun log(tag: String, msg: String,json:String) {
         if (dbWriteUtils == null) {
             if (LogWrite.isDebug()){
                 Log.d(TAG, "dbWriteUtils 未初始化");
@@ -206,15 +236,35 @@ class SuspendWindowService : LifecycleService(),View.OnClickListener {
             return
         }
 
+        val logTime = System.currentTimeMillis()
+        if (Looper.myLooper() == Looper.getMainLooper()){
+            val model = TagLogModel(
+                tag = tag,
+                message = msg,
+                json = json,
+                createTime = logTime,
+                time =  simpleDataFormat.format(logTime))
+            addITask(model)
+        }else{
+            val model = TagLogModel(
+                tag = tag,
+                message = msg,
+                json = json,
+                createTime = logTime,
+                time =  simpleDataFormat.format(logTime))
+
+            val message = Message()
+            message.what = MSG_WHAT_1
+            message.obj = model
+            handler?.sendMessage(message)
+        }
+    }
+
+
+    private fun addITask(tagLogModel:TagLogModel){
         taskQueue.add(object : ITask {
             override fun doTask() {
-                val logTime = System.currentTimeMillis()
-                dbWriteUtils?.insert(TagLogModel(
-                    tag = tag,
-                    message = message,
-                    json = json,
-                    createTime = logTime,
-                    time =  simpleDataFormat.format(logTime)))
+                dbWriteUtils?.insert(tagLogModel)
             }
 
             override fun compareTo(other: ITask): Int {
