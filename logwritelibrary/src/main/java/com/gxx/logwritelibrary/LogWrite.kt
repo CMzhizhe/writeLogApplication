@@ -24,7 +24,6 @@ import java.util.Locale
 object LogWrite  {
     val TAG = "LogWrite"
     private var isDebug = false;
-    private var dbName = ""
     private var isStartService = false
     private lateinit var application:Application
     private var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
@@ -33,7 +32,6 @@ object LogWrite  {
     class Builder{
         var isDebug = false;
         var application:Application? = null;
-        var dbName:String = "";//数据库名称
         var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
 
         fun setDebug(isDebug:Boolean):Builder{
@@ -46,10 +44,6 @@ object LogWrite  {
             return this;
         }
 
-        fun setDbName(dbName:String):Builder{
-            this.dbName = dbName;
-            return this;
-        }
 
         fun setOnLogWriteFinishListener(onLogWriteFinishListener: OnLogWriteFinishListener):Builder{
             this.onLogWriteFinishListener = onLogWriteFinishListener;
@@ -74,8 +68,7 @@ object LogWrite  {
 
     private fun init(builder: Builder){
         this.application = builder.application!!
-        this.isDebug = builder.isDebug;
-        this.dbName = builder.dbName
+        this.isDebug = builder.isDebug
         this.onLogWriteFinishListener = builder.onLogWriteFinishListener
     }
 
@@ -97,15 +90,20 @@ object LogWrite  {
      * @date 创建时间: 2024/12/20
      * @author gaoxiaoxiong
      * @description 显示视图
+     * @param isFastStart 是否快速启动
      */
-    fun showView(){
+    fun showView(isFastStart:Boolean = false){
         // 判断是否含有浮窗权限
         Utils.checkSuspendedWindowPermission(application){
-            SuspendWindowService.startAndBindService(application, isDebug = isDebug, dbName = dbName,
+            SuspendWindowService.startAndBindService(
+                application,
+                isDebug = isDebug,
+                isFastStart = isFastStart,
                 serviceConnection)
         }
-
     }
+
+
 
     /**
      * @date 创建时间: 2024/12/20

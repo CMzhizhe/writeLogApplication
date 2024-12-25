@@ -21,6 +21,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.lifecycle.LifecycleService
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.gxx.logwritelibrary.BuildConfig
 import com.gxx.logwritelibrary.LogWrite
 import com.gxx.logwritelibrary.R
 import com.gxx.logwritelibrary.db.DBWriteUtils
@@ -56,16 +57,18 @@ class SuspendWindowService : Service(),View.OnClickListener {
         const val STATUS_NO = -1//原始状态
         const val STATUS_1 = 1;//正在记录中
         const val STATUS_2 = 2//将数据库里面的数据写入txt文件中
-        const val START = "start"
-        const val STOP = "stop"
+
 
         const val IS_DEBUG = "isDebug"
-        const val DB_NAME = "dbName"
+        const val IS_FAST_START = "isFastStart"
 
-        fun startAndBindService(context: Application, isDebug: Boolean = false, dbName: String = "", serviceConnection: ServiceConnection) {
+        fun startAndBindService(context: Application,
+                                isDebug: Boolean = false,
+                                isFastStart:Boolean = false,
+                                serviceConnection: ServiceConnection) {
             val intent = Intent(context, SuspendWindowService::class.java)
             intent.putExtra(IS_DEBUG, isDebug)
-            intent.putExtra(DB_NAME, dbName)
+            intent.putExtra(IS_FAST_START,isFastStart)
             context.startService(intent)
             context.bindService(intent,serviceConnection,Context.BIND_AUTO_CREATE)
         }
@@ -83,8 +86,9 @@ class SuspendWindowService : Service(),View.OnClickListener {
     private val simpleDataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
     private var dbWriteUtils: DBWriteUtils? = null;
     private val singleThread = Executors.newSingleThreadExecutor()
-    private var dbName: String = "";//数据库名称
+    private var dbName: String = "gxx_log_write.db";//数据库名称
     private var isDebug = false;
+    private var isFastStart = false//是否快速启动
 
     class LocalBinder(private val service: SuspendWindowService) : Binder() {
         fun getService():SuspendWindowService{
@@ -107,28 +111,34 @@ class SuspendWindowService : Service(),View.OnClickListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         this.isDebug = intent?.getBooleanExtra(IS_DEBUG, false) ?: false
-        this.dbName = intent?.getStringExtra(DB_NAME) ?: ""
+        this.isFastStart = intent?.getBooleanExtra(IS_FAST_START,false) ?: false
+
+        if (dbWriteUtils == null){
+            //获取进程名称
+            val processName = ProcessUtils.getProcessName(this)
+            // 进行拆分
+            val array = processName.split(":")
+
+            if (array.size == 2){
+                dbName = array[1] +"_"+dbName
+            }
+
+            dbWriteUtils = DBWriteUtils(application, dbName)
+        }
+
+        if (isFastStart){
+            if(BuildConfig.DEBUG) {
+                Log.d(TAG, "开启快速启动");
+            }
+            start()
+        }
+
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onCreate() {
         super.onCreate()
-        //获取进程名称
-       val processName = ProcessUtils.getProcessName(this)
-        // 进行拆分
-        val array = processName.split(":")
-
-        if (this.dbName.isNullOrEmpty()) {
-            dbName = "gxx_log_write.db"
-        }
-
-        if (array.size == 2){
-            dbName = array[1] +"_"+dbName
-        }
-
-        dbWriteUtils = DBWriteUtils(application, dbName)
         createView()
-
         handler = MyHandler(this)
     }
 
@@ -161,6 +171,7 @@ class SuspendWindowService : Service(),View.OnClickListener {
                 x = outMetrics.widthPixels / 2 - width / 2
                 y = outMetrics.heightPixels / 2 - height / 2
             }
+
             // 新建悬浮窗控件
             floatRootView = LayoutInflater.from(this@SuspendWindowService)
                 .inflate(R.layout.view_write_float, null) as CustomButton
@@ -182,6 +193,10 @@ class SuspendWindowService : Service(),View.OnClickListener {
                 Log.d(TAG, "当前状态=${status}，不满足条件，无法执行");
             }
             return
+        }
+
+        if(BuildConfig.DEBUG) {
+          Log.d(TAG, "floatRootView == null");
         }
 
         floatRootView?.apply {
