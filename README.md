@@ -5,11 +5,10 @@
 ```
   implementation 'com.github.CMzhizhe:writeLogApplication:v1.0.1'
 
-  LogWriteManager.Builder()
-            .setApplication(this)
-            .setDebug(BuildConfig.DEBUG)
-            .setOnLogWriteTimeFinishListener(this)//时间到了，日志记录回调
-            .setDuration(30) //单位秒，这里30秒，表示30秒内日志记录倒计时
+  LogWrite.Builder()
+            .setApplication(mApplication)
+            .setDebug(true)
+            .setOnLogWriteFinishListener(this)//时间到了，日志记录回调 
             .build()
 ```
 在开始使用的时候，需要先调用start()方法开启
