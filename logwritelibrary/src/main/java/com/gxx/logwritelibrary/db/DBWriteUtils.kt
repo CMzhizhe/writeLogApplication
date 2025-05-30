@@ -60,7 +60,7 @@ class DBWriteUtils(context: Context, dbName: String) {
         list
     }
 
-    suspend fun cleanData() = withContext(Dispatchers.Default){
+    fun cleanData(){
         writableDatabase.delete(DBHelper.TABLE_NAME,null,null)
     }
 

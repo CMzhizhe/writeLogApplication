@@ -27,7 +27,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.UserInfoActivity"/>
+        <activity android:name=".activity.UserInfoActivity"
+            android:process=":tools"
+            />
 
     </application>
 

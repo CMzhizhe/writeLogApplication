@@ -2,51 +2,51 @@ package com.gxx.logwritelibrary
 
 
 import android.app.Application
-import android.content.BroadcastReceiver
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
+import android.os.Bundle
 import android.os.IBinder
-import android.os.Looper
+import android.os.Message
+import android.os.Messenger
+import android.os.RemoteException
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.gxx.logwritelibrary.inter.OnLogWriteFinishListener
 import com.gxx.logwritelibrary.model.TagLogModel
-import com.gxx.logwritelibrary.service.SuspendWindowService
+import com.gxx.logwritelibrary.service.LogService
 import com.gxx.logwritelibrary.utils.Utils
-import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 
 object LogWrite  {
     val TAG = "LogWrite"
-    private var isDebug = false;
+    private var isDebug = false
     private var isStartService = false
     private lateinit var application:Application
     private var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
-    private var weakFlowService:WeakReference<SuspendWindowService>? = null
+    private var serviceMessenger: Messenger? = null
+    private var filePath:String? = null
+    private val simpleDataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
     class Builder{
-        var isDebug = false;
-        var application:Application? = null;
-        var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
+        var isDebug = false
+        var application:Application? = null
+        var filePath:String? = null
+
+        fun setFilePath(path:String):Builder{
+            this.filePath = path
+            return this
+        }
 
         fun setDebug(isDebug:Boolean):Builder{
             this.isDebug = isDebug;
             return this;
         }
 
+
         fun setApplication(application:Application):Builder{
             this.application = application;
-            return this;
-        }
-
-
-        fun setOnLogWriteFinishListener(onLogWriteFinishListener: OnLogWriteFinishListener):Builder{
-            this.onLogWriteFinishListener = onLogWriteFinishListener;
             return this;
         }
 
@@ -69,51 +69,80 @@ object LogWrite  {
     private fun init(builder: Builder){
         this.application = builder.application!!
         this.isDebug = builder.isDebug
-        this.onLogWriteFinishListener = builder.onLogWriteFinishListener
+        this.filePath = builder.filePath
+        LogService.startAndBindService(
+            application,
+            serviceConnection)
     }
 
-    fun log(tag: String,message: String){
-        this.log(tag,message,"",true)
+
+    fun getFilePath():String?{
+        return filePath
     }
 
-    fun log(tag:String, message:String,jsonString:String = "", showLog:Boolean = true){
+    fun setOnLogWriteFinishListener(onLogWriteFinishListener: OnLogWriteFinishListener){
+        this.onLogWriteFinishListener = onLogWriteFinishListener;
+    }
+
+    fun log(tag: String,msg: String){
+        this.log(tag,msg,"",true)
+    }
+
+    fun log(tag:String, msg:String,json:String = "", showLog:Boolean = true){
         if (isDebug && showLog){
-            Log.d(tag,message)
+            Log.d(tag,msg)
         }
 
-        if (isStartService && weakFlowService!=null && weakFlowService?.get()!=null){
-            weakFlowService?.get()?.log(tag = tag,msg = message, json = jsonString)
+        if (isStartService){
+            val logTime = System.currentTimeMillis()
+            val model = TagLogModel(
+                tag = tag,
+                message = msg,
+                json = json,
+                createTime = logTime,
+                time = simpleDataFormat.format(logTime)
+            )
+
+            val msg: Message = Message.obtain(null, LogService.MSG_WHAT_1)
+            val bundle = Bundle()
+            bundle.putParcelable(LogService.PARAMS_TAG_MODEL, model)
+            msg.data = bundle
+            try {
+                serviceMessenger?.send(msg)
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+            }
         }
     }
 
+
     /**
-     * @date 创建时间: 2024/12/20
-     * @author gaoxiaoxiong
-     * @description 显示视图
-     * @param isFastStart 是否快速启动
+     * 显示视图
      */
-    fun showView(isFastStart:Boolean = false){
-        // 判断是否含有浮窗权限
+    fun showView(){
+        if (!isDebug || !isStartService){
+            return
+        }
+
         Utils.checkSuspendedWindowPermission(application){
-            SuspendWindowService.startAndBindService(
-                application,
-                isDebug = isDebug,
-                isFastStart = isFastStart,
-                serviceConnection)
+            if (isStartService){
+                val msg: Message = Message.obtain(null, LogService.MSG_WHAT_2)
+                serviceMessenger?.send(msg)
+            }
         }
     }
 
 
-
     /**
-     * @date 创建时间: 2024/12/20
-     * @author gaoxiaoxiong
-     * @description 关闭视图
+     * 关闭视图
      */
     fun hideView(){
+        if (!isDebug){
+            return
+        }
         // 判断是否含有浮窗权限
         Utils.checkSuspendedWindowPermission(application){
-            application.stopService(Intent(application,SuspendWindowService::class.java))
+            application.stopService(Intent(application,LogService::class.java))
             application.unbindService(serviceConnection)
         }
     }
@@ -122,8 +151,7 @@ object LogWrite  {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service!=null){
-                val binder = service as SuspendWindowService.LocalBinder
-                weakFlowService = WeakReference<SuspendWindowService>(binder.getService())
+                serviceMessenger =  Messenger(service);
                 isStartService = true
             }
 
@@ -131,7 +159,7 @@ object LogWrite  {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             isStartService = false
-            weakFlowService?.clear()
+            serviceMessenger = null
         }
 
     }

@@ -47,6 +47,6 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
 
     implementation 'androidx.lifecycle:lifecycle-service:2.2.0'
-
+    implementation "com.blankj:utilcodex:1.31.1"
     implementation project(':logwritelibrary')
 }
