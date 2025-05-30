@@ -8,7 +8,7 @@
   LogWrite.Builder()
             .setApplication(mApplication)
             .setDebug(true)
-            .setOnLogWriteFinishListener(this)//时间到了，日志记录回调 
+            .setOnLogWriteFinishListener(this) 
             .build()
 ```
 在开始使用的时候，需要先调用start()方法开启
