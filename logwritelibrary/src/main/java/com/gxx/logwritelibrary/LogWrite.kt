@@ -98,7 +98,7 @@ object LogWrite  {
             Log.d(tag,msg)
         }
 
-        if (isStartService && isStartLog){
+        if (isStartService && isStartLog && serviceMessenger!=null ){
             val logTime = System.currentTimeMillis()
             val model = TagLogModel(
                 tag = tag,
@@ -125,7 +125,7 @@ object LogWrite  {
      * 显示视图
      */
     fun showView(){
-        if (!isStartService || !isStartLog){
+        if (!isDebug || !isStartService || !isStartLog){
             return
         }
 
@@ -142,7 +142,7 @@ object LogWrite  {
      * 关闭视图
      */
     fun hideView(){
-        if (!isStartLog){
+        if (!isDebug || !isStartService || !isStartLog){
             return
         }
 
