@@ -27,7 +27,6 @@ object LogWrite  {
     private var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
     private var serviceMessenger: Messenger? = null
     private var filePath:String? = null
-    private var isStartLog = false
     private val simpleDataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
     class Builder{
@@ -71,18 +70,19 @@ object LogWrite  {
         this.application = builder.application!!
         this.isDebug = builder.isDebug
         this.filePath = builder.filePath
-        LogService.startAndBindService(
-            application,
-            serviceConnection)
     }
-
 
     fun getFilePath():String?{
         return filePath
     }
 
-    fun setStartLog(boolean: Boolean){
-        this.isStartLog = boolean
+    /**
+     * 开启服务
+     */
+    fun startService(){
+        LogService.startAndBindService(
+            application,
+            serviceConnection)
     }
 
     fun setOnLogWriteFinishListener(onLogWriteFinishListener: OnLogWriteFinishListener){
@@ -98,7 +98,7 @@ object LogWrite  {
             Log.d(tag,msg)
         }
 
-        if (isStartService && isStartLog && serviceMessenger!=null ){
+        if (isStartService && serviceMessenger!=null ){
             val logTime = System.currentTimeMillis()
             val model = TagLogModel(
                 tag = tag,
@@ -125,7 +125,7 @@ object LogWrite  {
      * 显示视图
      */
     fun showView(){
-        if (!isDebug || !isStartService || !isStartLog){
+        if (!isDebug || !isStartService){
             return
         }
 
@@ -142,7 +142,7 @@ object LogWrite  {
      * 关闭视图
      */
     fun hideView(){
-        if (!isDebug || !isStartService || !isStartLog){
+        if (!isDebug || !isStartService){
             return
         }
 
