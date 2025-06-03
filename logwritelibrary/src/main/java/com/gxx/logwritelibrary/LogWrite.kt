@@ -27,6 +27,7 @@ object LogWrite  {
     private var onLogWriteFinishListener: OnLogWriteFinishListener? = null;
     private var serviceMessenger: Messenger? = null
     private var filePath:String? = null
+    private var isStartLog = false
     private val simpleDataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
     class Builder{
@@ -80,6 +81,10 @@ object LogWrite  {
         return filePath
     }
 
+    fun setStartLog(boolean: Boolean){
+        this.isStartLog = boolean
+    }
+
     fun setOnLogWriteFinishListener(onLogWriteFinishListener: OnLogWriteFinishListener){
         this.onLogWriteFinishListener = onLogWriteFinishListener;
     }
@@ -93,7 +98,7 @@ object LogWrite  {
             Log.d(tag,msg)
         }
 
-        if (isStartService){
+        if (isStartService && isStartLog){
             val logTime = System.currentTimeMillis()
             val model = TagLogModel(
                 tag = tag,
@@ -120,7 +125,7 @@ object LogWrite  {
      * 显示视图
      */
     fun showView(){
-        if (!isDebug || !isStartService){
+        if (!isStartService || !isStartLog){
             return
         }
 
@@ -137,9 +142,10 @@ object LogWrite  {
      * 关闭视图
      */
     fun hideView(){
-        if (!isDebug){
+        if (!isStartLog){
             return
         }
+
         // 判断是否含有浮窗权限
         Utils.checkSuspendedWindowPermission(application){
             application.stopService(Intent(application,LogService::class.java))
