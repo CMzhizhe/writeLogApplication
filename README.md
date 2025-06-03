@@ -24,6 +24,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+       //开启服务
+        LogWrite.startService()
+
         this.findViewById<Button>(R.id.bt_show_view).setOnClickListener {
             LogWrite.showView()
         }
