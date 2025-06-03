@@ -77,9 +77,9 @@ object LogWrite  {
     }
 
     /**
-     * 开启服务
+     * 开始记录日志
      */
-    fun startService(){
+    fun startRecord(){
         LogService.startAndBindService(
             application,
             serviceConnection)
