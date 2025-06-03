@@ -2,8 +2,7 @@
 自定义记录log到本地，主要用于release环境，无法显示很好调试，显示log的情况下，将日志都记录在文件里面
 
 #### 使用教程
-```
-  implementation 'com.github.CMzhizhe:writeLogApplication:v1.0.9'
+``` 
 
    LogWrite.Builder()
             .setApplication(this)
@@ -24,8 +23,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-       //开启服务
-        LogWrite.startService()
+       //开启服务 
+        LogWrite.startRecord()
 
         this.findViewById<Button>(R.id.bt_show_view).setOnClickListener {
             LogWrite.showView()
